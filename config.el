@@ -72,3 +72,9 @@
 ;; they are implemented.
 
 (setq projectile-enable-caching nil)
+
+;; Better syntax highlighting on org-mode exports to PDF
+(use-package! engrave-faces-latex
+  :after ox-latex
+  :config
+  (setq org-latex-src-block-backend 'engraved))
