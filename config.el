@@ -74,6 +74,14 @@
 (setq projectile-enable-caching nil)
 (setq delete-by-moving-to-trash t)
 
+;; Make the Sly REPL pop-up on the side instead of on the bottom
+(after! sly
+    (set-popup-rules!
+        '(("^\\*sly-mrepl"
+            :side right
+            :width 100
+            :quit nil
+            :ttl nil))))
 
 ;; Better syntax highlighting on org-mode exports to PDF
 (use-package! engrave-faces-latex
