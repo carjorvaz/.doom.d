@@ -72,6 +72,8 @@
 ;; they are implemented.
 
 (setq projectile-enable-caching nil)
+(setq delete-by-moving-to-trash t)
+
 
 ;; Better syntax highlighting on org-mode exports to PDF
 (use-package! engrave-faces-latex
