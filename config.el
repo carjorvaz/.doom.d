@@ -91,3 +91,10 @@
 
 ;; Use the alejandra formatter for Nix
 (set-formatter! 'alejandra "alejandra --quiet" :modes '(nix-mode))
+
+;; Speed-up saving org-roam files
+;; https://github.com/org-roam/org-roam/issues/1752
+(advice-add 'org-roam-db-update-file :around
+              (defun +org-roam-db-update-file (fn &rest args)
+                  (emacsql-with-transaction (org-roam-db)
+                    (apply fn args))))
