@@ -87,7 +87,3 @@
   :after ox-latex
   :config
   (setq org-latex-src-block-backend 'engraved))
-
-;; Use the alejandra formatter for Nix
-(set-formatter! 'alejandra "alejandra --quiet" :modes '(nix-mode))
-
