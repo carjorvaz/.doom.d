@@ -1,0 +1,7 @@
+* Installing
+
+#+begin_src
+git clone https://github.com/carjorvaz/.doom.d ~/.config/doom
+git clone --depth 1 --single-branch https://github.com/doomemacs/doomemacs ~/.config/emacs
+~/.config/emacs/bin/doom install
+#+end_src
