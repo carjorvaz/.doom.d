@@ -100,3 +100,9 @@
   :after ox-latex
   :config
   (setq org-latex-src-block-backend 'engraved))
+
+;; Use system Julia LSP
+(setq lsp-julia-package-dir nil)
+
+(after! lsp-julia
+  (setq lsp-julia-default-environment "~/.julia/environments/v1.11"))
