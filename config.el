@@ -71,19 +71,17 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
-;;; :ui modeline
 ;; An evil mode indicator is redundant with cursor shape
 (setq doom-modeline-modal nil)
 
-;;; :editor evil
 ;; Focus new window after splitting
 (setq evil-split-window-below t
       evil-vsplit-window-right t)
 
-;;; :ui doom-dashboard
+;; Show Emacs icon on dashboard
 (setq fancy-splash-image (file-name-concat doom-user-dir "splash.png"))
 
-;; Prevents some cases of Emacs flickering.
+;; Prevents some cases of Emacs flickering
 (add-to-list 'default-frame-alist '(inhibit-double-buffering . t))
 
 (setq delete-by-moving-to-trash t)
@@ -97,7 +95,7 @@
             :quit nil
             :ttl nil))))
 
-;; Better syntax highlighting on org-mode exports to PDF
+;; Improve syntax highlighting on org-mode exports to PDF
 (use-package! engrave-faces-latex
   :after ox-latex
   :config
