@@ -18,7 +18,7 @@
 ;; - `doom-unicode-font' -- for unicode glyphs
 ;; - `doom-serif-font' -- for the `fixed-pitch-serif' face
 ;;
-(setq doom-font (font-spec :family "monospace" :size 18))
+(setq doom-font (font-spec :family "JetBrainsMono Nerd Font" :size 18))
 ;;
 ;; If you or Emacs can't find your font, use 'M-x describe-font' to look them
 ;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
