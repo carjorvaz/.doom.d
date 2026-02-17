@@ -25,11 +25,6 @@
 ;; refresh your font settings. If Emacs still can't find your font, it likely
 ;; wasn't installed correctly. Font issues are rarely Doom issues!
 
-;; There are two ways to load a theme. Both assume the theme is installed and
-;; available. You can either set `doom-theme' or manually load a theme with the
-;; `load-theme' function. This is the default:
-(setq doom-theme 'modus-operandi)
-
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type nil)
@@ -80,19 +75,31 @@
 
 (setq +doom-dashboard-functions '(doom-dashboard-widget-shortmenu doom-dashboard-widget-loaded))
 
-;; Prevents some cases of Emacs flickering
-(add-to-list 'default-frame-alist '(inhibit-double-buffering . t))
-
 (setq delete-by-moving-to-trash t)
+
+;; Auto-refresh buffers when files change on disk
+(global-auto-revert-mode 1)
 
 ;; Make the Sly REPL pop-up on the side instead of on the bottom
 (after! sly
-    (set-popup-rules!
-        '(("^\\*sly-mrepl"
-            :side right
-            :width 100
-            :quit nil
-            :ttl nil))))
+  (set-popup-rules!
+    '(("^\\*sly-mrepl"
+       :side right
+       :width 100
+       :quit nil
+       :ttl nil)))
+
+  ;; Adjust these because of not using quicklisp on NixOS 
+  (setq sly-contribs '(sly-mrepl
+                       sly-autodoc
+                       sly-fancy-inspector
+                       sly-fancy-trace
+                       sly-scratch
+                       sly-package-fu
+                       sly-fontifying-fu
+                       sly-trace-dialog
+                       sly-indentation
+                       sly-tramp)))
 
 ;; Improve syntax highlighting on org-mode exports to PDF
 (use-package! engrave-faces-latex
@@ -100,17 +107,165 @@
   :config
   (setq org-latex-src-block-backend 'engraved))
 
-;; Use system Julia LSP
-(setq lsp-julia-package-dir nil)
 
-(after! lsp-julia
-  (setq lsp-julia-default-environment "~/.julia/environments/v1.11"))
+;;; --- GTD System ---
+
+(after! org
+  ;; GTD TODO states
+  (setq org-todo-keywords
+        '((sequence
+           "TODO(t)"     ; Inbox: needs clarifying
+           "NEXT(n)"     ; Next action: defined, ready to do
+           "STRT(s)"     ; Started: actively working on it now
+           "WAIT(w@/!)"  ; Waiting: blocked on someone/something (log note)
+           "HOLD(h@/!)"  ; On hold: paused by choice (log note)
+           "PROJ(p)"     ; Project: multi-step outcome
+           "|"
+           "DONE(d!)"    ; Completed (log timestamp)
+           "KILL(k@)")   ; Cancelled (log reason)
+          (sequence
+           "IDEA(i)"     ; Someday/Maybe
+           "|"
+           "DONE(d!)"
+           "KILL(k@)"))
+        org-todo-keyword-faces
+        '(("NEXT" . (:inherit success :weight bold))
+          ("STRT" . +org-todo-active)
+          ("WAIT" . +org-todo-onhold)
+          ("HOLD" . +org-todo-onhold)
+          ("PROJ" . +org-todo-project)
+          ("IDEA" . (:inherit shadow :weight bold))
+          ("KILL" . +org-todo-cancel)))
+
+  ;; GTD agenda files
+  (setq org-agenda-files '("~/org/inbox.org"
+                           "~/org/gtd.org"
+                           "~/org/tickler.org"
+                           "~/org/review.org"
+                           "~/org/someday.org"))
+
+  ;; GTD capture templates
+  (setq +org-capture-todo-file "inbox.org"
+        +org-capture-notes-file "inbox.org")
+
+  (setq org-capture-templates
+        '(("i" "Inbox" entry
+           (file "inbox.org")
+           "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n"
+           :prepend t :empty-lines 1)
+          ("t" "Todo (with link)" entry
+           (file "inbox.org")
+           "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%a\n"
+           :prepend t :empty-lines 1)
+          ("n" "Note (fleeting)" entry
+           (file+headline "inbox.org" "Notes")
+           "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n"
+           :prepend t :empty-lines 1)
+          ("w" "Waiting For" entry
+           (file+headline "gtd.org" "Waiting For")
+           "* WAIT %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n"
+           :prepend t :empty-lines 1)
+          ("s" "Someday / Maybe" entry
+           (file "someday.org")
+           "* IDEA %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n"
+           :prepend t :empty-lines 1)
+          ("r" "Tickler (future reminder)" entry
+           (file "tickler.org")
+           "* TODO %?\nSCHEDULED: %^{When?}t\n:PROPERTIES:\n:CREATED: %U\n:END:\n"
+           :prepend t :empty-lines 1)))
+
+  ;; Refile: inbox items -> gtd.org or someday.org headings
+  (setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 2)
+                             ("~/org/someday.org" :maxlevel . 1)
+                             ("~/org/tickler.org" :maxlevel . 1))
+        org-refile-use-outline-path 'file
+        org-outline-path-complete-in-steps nil
+        org-refile-allow-creating-parent-nodes 'confirm)
+
+  ;; GTD agenda views
+  (setq org-agenda-custom-commands
+        '(("g" "GTD Dashboard"
+           ((agenda "" ((org-agenda-span 7)
+                        (org-agenda-start-day nil)))
+            (todo "NEXT"
+                  ((org-agenda-overriding-header "Next Actions")
+                   (org-agenda-sorting-strategy '(tag-up priority-down))))
+            (todo "STRT"
+                  ((org-agenda-overriding-header "In Progress")))
+            (todo "WAIT"
+                  ((org-agenda-overriding-header "Waiting For")))
+            (tags "inbox"
+                  ((org-agenda-overriding-header "Inbox (process me!)")
+                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'nottodo '("TODO")))))))
+          ("n" "Next Actions (by context)"
+           ((tags-todo "+@deep+TODO=\"NEXT\""
+                       ((org-agenda-overriding-header "Deep Work")))
+            (tags-todo "+@shallow+TODO=\"NEXT\""
+                       ((org-agenda-overriding-header "Shallow Tasks")))
+            (tags-todo "+@errand+TODO=\"NEXT\""
+                       ((org-agenda-overriding-header "Errands")))
+            (tags-todo "+@phone+TODO=\"NEXT\""
+                       ((org-agenda-overriding-header "Phone Calls")))
+            (tags-todo "-@deep-@shallow-@errand-@phone+TODO=\"NEXT\""
+                       ((org-agenda-overriding-header "No Context")))))
+          ("p" "Projects"
+           ((todo "PROJ"
+                  ((org-agenda-overriding-header "Active Projects")))))
+          ("S" "Stuck Projects (no NEXT action)"
+           ((stuck ""
+                   ((org-stuck-projects
+                     '("+TODO=\"PROJ\"" ("NEXT" "STRT") nil ""))))))
+          ("W" "Weekly Review"
+           ((tags "inbox"
+                  ((org-agenda-overriding-header "Inbox (process to zero)")))
+            (stuck ""
+                   ((org-agenda-overriding-header "Stuck Projects (need NEXT action)")
+                    (org-stuck-projects
+                     '("+TODO=\"PROJ\"" ("NEXT" "STRT") nil ""))))
+            (todo "WAIT"
+                  ((org-agenda-overriding-header "Waiting For (follow up?)")))
+            (todo "NEXT"
+                  ((org-agenda-overriding-header "All Next Actions (still valid?)")))
+            (todo "IDEA"
+                  ((org-agenda-overriding-header "Someday/Maybe (promote or kill?)")))))))
+
+  ;; Predefined tags
+  (setq org-tag-alist '((:startgroup . nil)
+                        ("@deep" . ?d)
+                        ("@shallow" . ?s)
+                        ("@errand" . ?e)
+                        ("@phone" . ?p)
+                        (:endgroup . nil)
+                        ;; Areas of focus
+                        ("thesis" . ?T)
+                        ("kubestronaut" . ?K)
+                        ("ecommerce" . ?E)
+                        ("blog" . ?B)
+                        ("nixos" . ?N)
+                        ("selfhost" . ?S)
+                        ("home" . ?H)
+                        ("fitness" . ?F)
+                        ("personal" . ?P)))
+
+  ;; Log state changes into LOGBOOK drawer
+  (setq org-log-into-drawer t
+        org-log-done 'time)
+
+  ;; Archive to per-file archive
+  (setq org-archive-location "archive/archive_%s::datetree/"))
+
+(after! org-roam
+  (setq org-roam-dailies-capture-templates
+        '(("d" "default" entry
+           "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n"
+           :target (file+head "%<%Y-%m-%d>.org"
+                              "#+title: %<%Y-%m-%d %A>\n\n")))))
 
 (use-package! auto-dark
   :defer t
   :init
   ;; Configure themes
-  (setq! auto-dark-themes '((doom-gruvbox) (modus-operandi-tritanopia)))
+  (setq! auto-dark-themes '((doom-gruvbox) (doom-gruvbox-light)))
   ;; Disable doom's theme loading mechanism (just to make sure)
   (setq! doom-theme nil)
   ;; Declare that all themes are safe to load.
