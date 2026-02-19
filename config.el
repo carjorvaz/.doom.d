@@ -120,14 +120,10 @@
            "WAIT(w@/!)"  ; Waiting: blocked on someone/something (log note)
            "HOLD(h@/!)"  ; On hold: paused by choice (log note)
            "PROJ(p)"     ; Project: multi-step outcome
-           "|"
-           "DONE(d!)"    ; Completed (log timestamp)
-           "KILL(k@)")   ; Cancelled (log reason)
-          (sequence
            "IDEA(i)"     ; Someday/Maybe
            "|"
-           "DONE(d!)"
-           "KILL(k@)"))
+           "DONE(d!)"    ; Completed (log timestamp)
+           "KILL(k@)"))  ; Cancelled (log reason)
         org-todo-keyword-faces
         '(("NEXT" . (:inherit success :weight bold))
           ("STRT" . +org-todo-active)
@@ -141,7 +137,7 @@
   (setq org-agenda-files '("~/org/inbox.org"
                            "~/org/gtd.org"
                            "~/org/tickler.org"
-                           "~/org/review.org"
+                           "~/org/habits.org"
                            "~/org/someday.org"))
 
   ;; GTD capture templates
